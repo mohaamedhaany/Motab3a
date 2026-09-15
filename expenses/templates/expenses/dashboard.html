@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة تحكم المحاسب</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { border: none; border-radius: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold">⚙️ لوحة الإدارة والتحكم</h2>
+        <div>
+            <a href="{% url 'manager_dashboard' %}" class="btn btn-outline-secondary" target="_blank">👀 شاشة المدير</a>
+            <form method="POST" action="{% url 'logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">خروج</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- فورم الإضافة -->
+    <div class="card shadow-sm mb-4 p-3">
+        <form method="POST" class="row g-3 align-items-end">
+            {% csrf_token %}
+            <div class="col-md-4">
+                <label class="form-label text-muted small">اسم الطلب</label>
+                <input type="text" name="item_name" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small">المبلغ (جنيه)</label>
+                <input type="number" step="0.01" name="price" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small">التاريخ</label>
+                <input type="date" name="date_requested" class="form-control" required>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100 fw-bold">➕ إضافة</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="alert alert-info shadow-sm fs-5 fw-bold">
+        💰 إجمالي المستحقات المطلوبة من المدير: <span class="text-danger">{{ total_unsettled }} ج.م</span>
+    </div>
+
+    <!-- التبويبات للطلبات الحالية والأرشيف -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <ul class="nav nav-tabs card-header-tabs">
+                <li class="nav-item">
+                    <button class="nav-link active fw-bold text-danger" data-bs-toggle="tab" data-bs-target="#unsettled">
+                        ⏳ طلبات معلقة ({{ unsettled_orders.count }})
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold text-success" data-bs-toggle="tab" data-bs-target="#history">
+                        📑 الأرشيف المسدد ({{ settled_orders.count }})
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body p-0">
+            <div class="tab-content">
+                <!-- جدول المعلق -->
+                <div class="tab-pane fade show active" id="unsettled">
+                    <table class="table table-hover align-middle mb-0 text-center">
+                        <thead class="table-light">
+                            <tr><th>التاريخ</th><th>الصنف</th><th>السعر</th><th>الإجراءات</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for order in unsettled_orders %}
+                            <tr>
+                                <td>{{ order.date_requested|date:"Y-m-d" }}</td>
+                                <td class="fw-bold">{{ order.item_name }}</td>
+                                <td class="text-danger fw-bold">{{ order.price }} ج.م</td>
+                                <td>
+                                    <a href="{% url 'settle_order' order.id %}" class="btn btn-success btn-sm">تسديد 💸</a>
+                                    <a href="{% url 'edit_order' order.id %}" class="btn btn-warning btn-sm">تعديل ✏️</a>
+                                    <a href="{% url 'delete_order' order.id %}" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف هذا الطلب؟');">حذف 🗑️</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-muted py-4">لا توجد طلبات معلقة.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- جدول الأرشيف -->
+                <div class="tab-pane fade" id="history">
+                    <table class="table table-hover align-middle mb-0 text-center">
+                        <thead class="table-light">
+                            <tr><th>التاريخ</th><th>الصنف</th><th>السعر</th><th>الإجراءات</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for order in settled_orders %}
+                            <tr>
+                                <td>{{ order.date_requested|date:"Y-m-d" }}</td>
+                                <td>{{ order.item_name }}</td>
+                                <td class="text-success fw-bold">{{ order.price }} ج.م</td>
+                                <td>
+                                    <a href="{% url 'edit_order' order.id %}" class="btn btn-warning btn-sm">تعديل ✏️</a>
+                                    <a href="{% url 'delete_order' order.id %}" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من الحذف؟');">حذف 🗑️</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-muted py-4">لا يوجد أرشيف مدفوعات.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

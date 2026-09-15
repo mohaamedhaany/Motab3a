@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>كشف حساب المصروفات</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    <style>
+        body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .stat-card { border-radius: 12px; border: none; }
+    </style>
+</head>
+<body class="py-4">
+
+<div class="container" style="max-width: 900px;">
+    <!-- الهيدر وزرار الخروج -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-0">مرحباً يا فندم 👋</h3>
+            <p class="text-muted small mb-0">كشف الحسابات ومتابعة المصروفات</p>
+        </div>
+        <form method="POST" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger btn-sm">تسجيل الخروج</button>
+        </form>
+    </div>
+
+    <!-- صندوق الفلترة بالتاريخ -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label small text-muted">من تاريخ</label>
+                    <input type="date" name="start_date" value="{{ start_date|default:'' }}" class="form-control">
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label small text-muted">إلى تاريخ</label>
+                    <input type="date" name="end_date" value="{{ end_date|default:'' }}" class="form-control">
+                </div>
+                <div class="col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary w-100">تصفية</button>
+                    <a href="{% url 'manager_dashboard' %}" class="btn btn-secondary">إلغاء</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- كروت ملخص الحساب -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card stat-card bg-danger text-white shadow-sm p-3">
+                <div class="small opacity-75">المبلغ المعلق (مطلوب سداده)</div>
+                <h2 class="fw-bold my-2">{{ total_unsettled }} <span class="fs-6">ج.م</span></h2>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card stat-card bg-success text-white shadow-sm p-3">
+                <div class="small opacity-75">إجمالي المسدد في هذه الفترة (هيستوري)</div>
+                <h2 class="fw-bold my-2">{{ total_settled }} <span class="fs-6">ج.م</span></h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- التبويبات للطلبات الحالية والأرشيف -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <ul class="nav nav-tabs card-header-tabs" id="accountTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active fw-bold text-danger" data-bs-toggle="tab" data-bs-target="#unsettled" type="button">
+                        ⏳ طلبات معلقة ({{ unsettled_orders.count }})
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold text-success" data-bs-toggle="tab" data-bs-target="#history" type="button">
+                        📑 الهيستوري والمسدد ({{ settled_orders.count }})
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body p-0">
+            <div class="tab-content">
+                <!-- جدول المعلق -->
+                <div class="tab-pane fade show active" id="unsettled">
+                    <table class="table table-hover mb-0 text-center align-middle">
+                        <thead class="table-light">
+                            <tr><th>التاريخ</th><th>البيان</th><th class="text-end px-4">المبلغ</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for order in unsettled_orders %}
+                            <tr>
+                                <td>{{ order.date_requested|date:"Y-m-d" }}</td>
+                                <td class="fw-bold">{{ order.item_name }}</td>
+                                <td class="text-end px-4 text-danger fw-bold">{{ order.price }} ج.م</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="py-4 text-muted">لا توجد طلبات معلقة للفترة المحددة.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- جدول الهيستوري -->
+                <div class="tab-pane fade" id="history">
+                    <table class="table table-hover mb-0 text-center align-middle">
+                        <thead class="table-light">
+                            <tr><th>التاريخ</th><th>البيان</th><th class="text-end px-4">المبلغ المسدد</th><th>الحالة</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for order in settled_orders %}
+                            <tr>
+                                <td>{{ order.date_requested|date:"Y-m-d" }}</td>
+                                <td>{{ order.item_name }}</td>
+                                <td class="text-end px-4 text-success fw-bold">{{ order.price }} ج.م</td>
+                                <td><span class="badge bg-success">تم السداد ✔️</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="py-4 text-muted">لا يوجد سجل مدفوعات سابق في هذه الفترة.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
