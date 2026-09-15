@@ -5,10 +5,13 @@ from django.utils import timezone
 class AdvancePayment(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="المبلغ المقدم")
     date_received = models.DateField(default=timezone.now, verbose_name="تاريخ الاستلام")
-    note = models.CharField(max_length=255, blank=True, null=True, verbose_name="ملاحظات (اختياري)")
+    note = models.CharField(max_length=255, blank=True, null=True, verbose_name="ملاحظات")
+    
+    # السطر الجديد اللي ضفناه عشان التصفير
+    is_settled = models.BooleanField(default=False, verbose_name="تم تصفير الحساب؟")
 
     def __str__(self):
-        return f"مقدم: {self.amount} جنيه - يوم {self.date_received}"
+        return f"مقدم: {self.amount} - يوم {self.date_received}"
 
 # جدول الطلبات اللي بيطلبها المدير
 class Order(models.Model):

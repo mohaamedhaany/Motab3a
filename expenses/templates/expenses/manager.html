@@ -7,6 +7,7 @@
     <style>
         body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, sans-serif; }
         .stat-card { border-radius: 12px; border: none; }
+        .table th { background-color: #f1f5f9; color: #334155; font-weight: 600; }
     </style>
 </head>
 <body class="py-4">
@@ -15,105 +16,141 @@
     <!-- الهيدر وزرار الخروج -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="fw-bold mb-0">مرحباً يا فندم 👋</h3>
-            <p class="text-muted small mb-0">كشف الحسابات ومتابعة المصروفات</p>
+            <h3 class="fw-bold mb-0 text-dark">مرحباً بك 👋</h3>
+            <p class="text-muted small mb-0">كشف الحسابات ومتابعة المصروفات والعهد</p>
         </div>
         <form method="POST" action="{% url 'logout' %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-outline-danger btn-sm">تسجيل الخروج</button>
+            <button type="submit" class="btn btn-outline-danger btn-sm px-4">تسجيل الخروج</button>
         </form>
     </div>
 
     <!-- صندوق الفلترة بالتاريخ -->
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm mb-4 border-0 rounded-3">
         <div class="card-body">
             <form method="GET" class="row g-2 align-items-end">
                 <div class="col-md-5">
-                    <label class="form-label small text-muted">من تاريخ</label>
+                    <label class="form-label small text-muted fw-bold">من تاريخ</label>
                     <input type="date" name="start_date" value="{{ start_date|default:'' }}" class="form-control">
                 </div>
                 <div class="col-md-5">
-                    <label class="form-label small text-muted">إلى تاريخ</label>
+                    <label class="form-label small text-muted fw-bold">إلى تاريخ</label>
                     <input type="date" name="end_date" value="{{ end_date|default:'' }}" class="form-control">
                 </div>
                 <div class="col-md-2 d-flex gap-1">
-                    <button type="submit" class="btn btn-primary w-100">تصفية</button>
-                    <a href="{% url 'manager_dashboard' %}" class="btn btn-secondary">إلغاء</a>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">بحث</button>
+                    <a href="{% url 'manager_dashboard' %}" class="btn btn-light border">إلغاء</a>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- كروت ملخص الحساب -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-6">
-            <div class="card stat-card bg-danger text-white shadow-sm p-3">
-                <div class="small opacity-75">المبلغ المعلق (مطلوب سداده)</div>
-                <h2 class="fw-bold my-2">{{ total_unsettled }} <span class="fs-6">ج.م</span></h2>
+    <!-- كروت ملخص الحساب (المحفظة) -->
+    <div class="row g-3 mb-4 text-center">
+        <!-- المدفوع مقدماً -->
+        <div class="col-md-4">
+            <div class="card stat-card bg-success text-white shadow-sm p-4 h-100">
+                <div class="small opacity-75 mb-1">💰 إجمالي العهدة (المدفوع مقدماً)</div>
+                <h2 class="fw-bold mb-0">{{ total_advance }} <span class="fs-6">ج.م</span></h2>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card stat-card bg-success text-white shadow-sm p-3">
-                <div class="small opacity-75">إجمالي المسدد في هذه الفترة (هيستوري)</div>
-                <h2 class="fw-bold my-2">{{ total_settled }} <span class="fs-6">ج.م</span></h2>
+        <!-- المسحوبات -->
+        <div class="col-md-4">
+            <div class="card stat-card bg-danger text-white shadow-sm p-4 h-100">
+                <div class="small opacity-75 mb-1">🛒 إجمالي المسحوبات (الطلبات)</div>
+                <h2 class="fw-bold mb-0">{{ total_unsettled }} <span class="fs-6">ج.م</span></h2>
+            </div>
+        </div>
+        <!-- الصافي -->
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm p-4 h-100 {% if net_balance >= 0 %}bg-primary text-white{% else %}bg-warning text-dark{% endif %}">
+                <div class="small opacity-75 mb-1">
+                    {% if net_balance >= 0 %}✅ رصيد متبقي لك{% else %}⚠️ عجز (مطلوب سداده){% endif %}
+                </div>
+                <h2 class="fw-bold mb-0" dir="ltr">{{ net_balance }} <span class="fs-6">ج.م</span></h2>
             </div>
         </div>
     </div>
 
-    <!-- التبويبات للطلبات الحالية والأرشيف -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-white">
-            <ul class="nav nav-tabs card-header-tabs" id="accountTabs" role="tablist">
+    <!-- التبويبات لعرض التفاصيل -->
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+            <ul class="nav nav-tabs" id="accountTabs" role="tablist">
                 <li class="nav-item">
                     <button class="nav-link active fw-bold text-danger" data-bs-toggle="tab" data-bs-target="#unsettled" type="button">
-                        ⏳ طلبات معلقة ({{ unsettled_orders.count }})
+                        ⏳ تفاصيل الطلبات ({{ unsettled_orders.count }})
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link fw-bold text-success" data-bs-toggle="tab" data-bs-target="#history" type="button">
-                        📑 الهيستوري والمسدد ({{ settled_orders.count }})
+                    <button class="nav-link fw-bold text-success" data-bs-toggle="tab" data-bs-target="#advances" type="button">
+                        💵 تفاصيل العهدة ({{ advances.count }})
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold text-secondary" data-bs-toggle="tab" data-bs-target="#history" type="button">
+                        📑 الأرشيف السابق
                     </button>
                 </li>
             </ul>
         </div>
+        
         <div class="card-body p-0">
             <div class="tab-content">
-                <!-- جدول المعلق -->
+                <!-- جدول الطلبات الحالية -->
                 <div class="tab-pane fade show active" id="unsettled">
                     <table class="table table-hover mb-0 text-center align-middle">
-                        <thead class="table-light">
-                            <tr><th>التاريخ</th><th>البيان</th><th class="text-end px-4">المبلغ</th></tr>
+                        <thead>
+                            <tr><th>التاريخ</th><th>البيان (الصنف)</th><th>المبلغ</th></tr>
                         </thead>
                         <tbody>
                             {% for order in unsettled_orders %}
                             <tr>
                                 <td>{{ order.date_requested|date:"Y-m-d" }}</td>
-                                <td class="fw-bold">{{ order.item_name }}</td>
-                                <td class="text-end px-4 text-danger fw-bold">{{ order.price }} ج.م</td>
+                                <td class="fw-bold text-dark">{{ order.item_name }}</td>
+                                <td class="text-danger fw-bold">{{ order.price }} ج.م</td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="3" class="py-4 text-muted">لا توجد طلبات معلقة للفترة المحددة.</td></tr>
+                            <tr><td colspan="3" class="py-5 text-muted">لا توجد مسحوبات في هذه الفترة.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
 
-                <!-- جدول الهيستوري -->
+                <!-- جدول العهدة الحالية -->
+                <div class="tab-pane fade" id="advances">
+                    <table class="table table-hover mb-0 text-center align-middle">
+                        <thead>
+                            <tr><th>تاريخ الاستلام</th><th>المبلغ المدفوع</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for adv in advances %}
+                            <tr>
+                                <td>{{ adv.date_received|date:"Y-m-d" }}</td>
+                                <td class="text-success fw-bold">{{ adv.amount }} ج.م</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="2" class="py-5 text-muted">لم يتم تسجيل دفعات مقدمة في هذه الفترة.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- جدول الأرشيف (ما تم تصفيره مسبقاً) -->
                 <div class="tab-pane fade" id="history">
                     <table class="table table-hover mb-0 text-center align-middle">
-                        <thead class="table-light">
-                            <tr><th>التاريخ</th><th>البيان</th><th class="text-end px-4">المبلغ المسدد</th><th>الحالة</th></tr>
+                        <thead>
+                            <tr><th>التاريخ</th><th>البيان</th><th>المبلغ</th><th>الحالة</th></tr>
                         </thead>
                         <tbody>
                             {% for order in settled_orders %}
                             <tr>
                                 <td>{{ order.date_requested|date:"Y-m-d" }}</td>
                                 <td>{{ order.item_name }}</td>
-                                <td class="text-end px-4 text-success fw-bold">{{ order.price }} ج.م</td>
-                                <td><span class="badge bg-success">تم السداد ✔️</span></td>
+                                <td class="text-secondary fw-bold">{{ order.price }} ج.م</td>
+                                <td><span class="badge bg-secondary">تم التصفية</span></td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="4" class="py-4 text-muted">لا يوجد سجل مدفوعات سابق في هذه الفترة.</td></tr>
+                            <tr><td colspan="4" class="py-5 text-muted">لا يوجد سجل أرشيف في هذه الفترة.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
