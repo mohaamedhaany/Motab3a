@@ -3,21 +3,19 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from .models import Order, AdvancePayment
 
-# 1. شاشة المحاسب (فيها الإضافة، المحفظة، والأرشيف)
+# 1. شاشة المحاسب
 @login_required
 def dashboard(request):
     if not request.user.is_staff:
         return redirect('manager_dashboard')
 
     if request.method == "POST":
-        # لو الفورم اللي اتبعتت بتاعت إضافة طلب
         if 'add_order' in request.POST:
             item_name = request.POST.get('item_name')
             price = request.POST.get('price')
             date_requested = request.POST.get('date_requested')
             Order.objects.create(item_name=item_name, price=price, date_requested=date_requested)
         
-        # لو الفورم اللي اتبعتت بتاعت إضافة فلوس للمحفظة (مقدم)
         elif 'add_advance' in request.POST:
             amount = request.POST.get('amount')
             date_received = request.POST.get('date_received')
@@ -26,16 +24,13 @@ def dashboard(request):
             
         return redirect('dashboard')
 
-    # جلب الداتا اللي لسه متصفرتش
-    unsettled_orders = Order.objects.filter(is_settled=False).order_by('-date_requested')
-    advances = AdvancePayment.objects.filter(is_settled=False).order_by('-date_received')
-    settled_orders = Order.objects.filter(is_settled=True).order_by('-date_requested')
+    # التعديل هنا: الترتيب بالتاريخ الأحدث، ثم السعر الأغلى
+    unsettled_orders = Order.objects.filter(is_settled=False).order_by('-date_requested', '-price')
+    advances = AdvancePayment.objects.filter(is_settled=False).order_by('-date_received', '-amount')
+    settled_orders = Order.objects.filter(is_settled=True).order_by('-date_requested', '-price')
     
-    # حساب الإجماليات
     total_unsettled = unsettled_orders.aggregate(Sum('price'))['price__sum'] or 0
     total_advance = advances.aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # صافي الحساب (المحفظة - الطلبات)
     net_balance = total_advance - total_unsettled
 
     return render(request, 'expenses/dashboard.html', {
@@ -71,10 +66,11 @@ def manager_dashboard(request):
     total_advance = advances.aggregate(Sum('amount'))['amount__sum'] or 0
     net_balance = total_advance - total_unsettled
 
+    # التعديل هنا برضه: الترتيب المزدوج
     context = {
-        'unsettled_orders': unsettled.order_by('-date_requested'),
-        'settled_orders': settled.order_by('-date_requested'),
-        'advances': advances.order_by('-date_received'),
+        'unsettled_orders': unsettled.order_by('-date_requested', '-price'),
+        'settled_orders': settled.order_by('-date_requested', '-price'),
+        'advances': advances.order_by('-date_received', '-amount'),
         'total_unsettled': total_unsettled,
         'total_settled': total_settled,
         'total_advance': total_advance,
@@ -88,7 +84,6 @@ def manager_dashboard(request):
 @login_required
 def close_period(request):
     if request.user.is_staff:
-        # تصفير كل الطلبات المعلقة والمقدمة
         Order.objects.filter(is_settled=False).update(is_settled=True)
         AdvancePayment.objects.filter(is_settled=False).update(is_settled=True)
     return redirect('dashboard')
