@@ -2,179 +2,246 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>لوحة تحكم المحاسب</title>
+    <!-- استدعاء Bootstrap و Cairo و FontAwesome -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        .card { border: none; border-radius: 12px; }
-        .stat-card { border-radius: 12px; }
+        body { background-color: #f4f7f6; font-family: 'Cairo', sans-serif; padding-bottom: 40px; }
+        
+        /* الهيدر المحترف */
+        .app-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            padding: 30px 20px 60px 20px;
+            color: white;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+        }
+        
+        /* كروت الإدخال */
+        .input-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.03);
+            border: 1px solid #edf2f7;
+            height: 100%;
+        }
+        .form-control { border-radius: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; font-size: 0.9rem; }
+        
+        /* الكروت اللي بتتسحب */
+        .horizontal-scroll {
+            display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 15px; padding-bottom: 10px; -webkit-overflow-scrolling: touch;
+        }
+        .horizontal-scroll::-webkit-scrollbar { display: none; }
+        
+        .stat-card {
+            min-width: 160px; flex: 0 0 auto; border-radius: 20px; padding: 20px; color: white; box-shadow: 0 6px 15px rgba(0,0,0,0.1); position: relative;
+        }
+        .bg-wallet { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .bg-expenses { background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); }
+        .bg-balance-pos { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .bg-balance-neg { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        
+        /* التبويبات والقوائم */
+        .custom-tabs { background: white; border-radius: 15px; padding: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .custom-tabs .nav-link { border-radius: 12px; color: #64748b; font-weight: 600; padding: 10px 15px; white-space: nowrap; border: none; }
+        .custom-tabs .nav-link.active { background-color: #edf2f7; color: #0f172a; }
+        
+        .list-container { background: white; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); overflow: hidden; }
+        .list-header { background-color: #f8fafc; color: #64748b; font-size: 0.85rem; font-weight: 700; padding: 12px 15px; border-bottom: 1px solid #f1f5f9; }
+        .list-item { padding: 15px; border-bottom: 1px solid #f1f5f9; }
+        .list-item:last-child { border-bottom: none; }
+        
+        /* زراير الأكشن الصغيره (✅ ✏️ 🗑️) */
+        .action-btn {
+            width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; text-decoration: none; color: white; transition: 0.2s;
+        }
+        .btn-settle { background-color: #10b981; }
+        .btn-edit { background-color: #f59e0b; }
+        .btn-delete { background-color: #ef4444; }
     </style>
 </head>
-<body class="py-4">
+<body>
 
-<div class="container">
     <!-- الهيدر -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary fw-bold">⚙️ لوحة الإدارة والتحكم</h2>
-        <div>
-            <a href="{% url 'manager_dashboard' %}" class="btn btn-outline-secondary me-2" target="_blank">👀 شاشة المدير</a>
-            <form method="POST" action="{% url 'logout' %}" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-dark">تسجيل الخروج</button>
-            </form>
+    <div class="app-header">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex gap-2">
+                <form method="POST" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn text-white fs-4 p-0"><i class="fa-solid fa-power-off text-danger"></i></button>
+                </form>
+                <a href="{% url 'manager_dashboard' %}" target="_blank" class="btn text-white fs-4 p-0 ms-2"><i class="fa-solid fa-eye text-info"></i></a>
+            </div>
+            <div class="text-end">
+                <h3 class="fw-bold mb-1">لوحة التحكم ⚙️</h3>
+                <p class="mb-0 opacity-75 small">إدارة المصروفات وتحديث الحسابات</p>
+            </div>
         </div>
     </div>
 
-    <!-- كروت ملخص الحساب (المحفظة) + زرار التصفير -->
-    <div class="row g-3 mb-4 text-center align-items-stretch">
-        <div class="col-md-3">
-            <div class="card stat-card bg-success text-white shadow-sm p-3 h-100">
-                <div class="small opacity-75">💰 المحفظة (المدفوع مقدماً)</div>
-                <h3 class="fw-bold my-2">{{ total_advance }} <span class="fs-6">ج.م</span></h3>
+    <div class="container" style="margin-top: -30px;">
+        
+        <!-- فورمات الإضافة (طلبات ومقدم) -->
+        <div class="row g-3 mb-4">
+            <!-- كارت إضافة طلب -->
+            <div class="col-md-7">
+                <div class="input-card">
+                    <h6 class="text-danger fw-bold mb-3"><i class="fas fa-cart-plus me-1"></i> إضافة منصرف جديد</h6>
+                    <form method="POST" class="row g-2 align-items-end">
+                        {% csrf_token %}
+                        <div class="col-5 col-md-4">
+                            <input type="text" name="item_name" class="form-control" placeholder="اسم الصنف" required>
+                        </div>
+                        <div class="col-4 col-md-3">
+                            <input type="number" step="0.01" name="price" class="form-control" placeholder="المبلغ" required>
+                        </div>
+                        <div class="col-3 col-md-3">
+                            <input type="date" name="date_requested" class="form-control" required>
+                        </div>
+                        <div class="col-12 col-md-2 mt-2 mt-md-0">
+                            <button type="submit" name="add_order" class="btn btn-danger w-100 fw-bold rounded-3">إضافة</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- كارت إضافة عهدة للمحفظة -->
+            <div class="col-md-5">
+                <div class="input-card border-success border-opacity-25">
+                    <h6 class="text-success fw-bold mb-3"><i class="fas fa-hand-holding-usd me-1"></i> استلام دفعة مقدمة</h6>
+                    <form method="POST" class="row g-2 align-items-end">
+                        {% csrf_token %}
+                        <div class="col-4 col-md-4">
+                            <input type="number" step="0.01" name="amount" class="form-control" placeholder="المبلغ" required>
+                        </div>
+                        <div class="col-5 col-md-5">
+                            <input type="date" name="date_received" class="form-control" required>
+                        </div>
+                        <div class="col-3 col-md-3 mt-2 mt-md-0">
+                            <button type="submit" name="add_advance" class="btn btn-success w-100 fw-bold rounded-3">استلام</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card stat-card bg-danger text-white shadow-sm p-3 h-100">
-                <div class="small opacity-75">🛒 إجمالي الطلبات (المسحوبات)</div>
-                <h3 class="fw-bold my-2">{{ total_unsettled }} <span class="fs-6">ج.م</span></h3>
+
+        <!-- الكروت الإحصائية (Swipeable) -->
+        <div class="horizontal-scroll mb-4">
+            <div class="stat-card bg-wallet">
+                <i class="fa-solid fa-sack-dollar fs-5 opacity-75 mb-2 d-block"></i>
+                <div class="small fw-bold mb-1">المحفظة (العهد)</div>
+                <h4 class="fw-bold mb-0">{{ total_advance }} <span class="fs-6 fw-normal">ج.m</span></h4>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card shadow-sm p-3 h-100 {% if net_balance >= 0 %}bg-primary text-white{% else %}bg-warning text-dark{% endif %}">
-                <div class="small opacity-75">{% if net_balance >= 0 %}✅ رصيد متبقي للمدير{% else %}⚠️ عجز (مطلوب من المدير){% endif %}</div>
-                <h2 class="fw-bold my-2" dir="ltr">{{ net_balance }} <span class="fs-6">ج.م</span></h2>
+            <div class="stat-card bg-expenses">
+                <i class="fa-solid fa-money-bill-transfer fs-5 opacity-75 mb-2 d-block"></i>
+                <div class="small fw-bold mb-1">إجمالي المسحوبات</div>
+                <h4 class="fw-bold mb-0">{{ total_unsettled }} <span class="fs-6 fw-normal">ج.m</span></h4>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card bg-white border border-danger shadow-sm p-3 h-100 d-flex justify-content-center">
-                <a href="{% url 'close_period' %}" class="btn btn-danger fw-bold w-100 py-2" onclick="return confirm('⚠️ هل أنت متأكد من تصفير الحساب؟ سيتم تحويل كل الطلبات والفلوس الحالية إلى الأرشيف وتبدأ من الصفر.');">
-                    🔄 تقفيل الأسبوع وتصفير الحساب
+            <div class="stat-card {% if net_balance >= 0 %}bg-balance-pos{% else %}bg-balance-neg{% endif %}">
+                <i class="fa-solid fa-scale-balanced fs-5 opacity-75 mb-2 d-block"></i>
+                <div class="small fw-bold mb-1">{% if net_balance >= 0 %}الرصيد المتبقي{% else %}عجز بالخزينة{% endif %}</div>
+                <h4 class="fw-bold mb-0" dir="ltr">{{ net_balance }} <span class="fs-6 fw-normal">ج.m</span></h4>
+            </div>
+            <div class="stat-card bg-white border border-danger shadow-sm d-flex align-items-center justify-content-center p-2">
+                <a href="{% url 'close_period' %}" class="btn btn-outline-danger border-0 fw-bold w-100 h-100 d-flex flex-column align-items-center justify-content-center" onclick="return confirm('⚠️ هل أنت متأكد من تصفير الحساب وتحويل كل العمليات للأرشيف؟');">
+                    <i class="fas fa-rotate-left fs-4 mb-1"></i>
+                    <span class="small">تصفير الحساب</span>
                 </a>
             </div>
         </div>
-    </div>
 
-    <!-- فورمات الإضافة (طلبات ومقدم) -->
-    <div class="row g-3 mb-4">
-        <!-- إضافة طلب -->
-        <div class="col-md-7">
-            <div class="card shadow-sm p-3 h-100">
-                <h5 class="text-danger fw-bold mb-3">🛒 إضافة طلب / مصروف</h5>
-                <form method="POST" class="row g-2">
-                    {% csrf_token %}
-                    <div class="col-md-4"><input type="text" name="item_name" class="form-control" placeholder="اسم الطلب" required></div>
-                    <div class="col-md-3"><input type="number" step="0.01" name="price" class="form-control" placeholder="السعر" required></div>
-                    <div class="col-md-3"><input type="date" name="date_requested" class="form-control" required></div>
-                    <div class="col-md-2"><button type="submit" name="add_order" class="btn btn-danger w-100">إضافة</button></div>
-                </form>
-            </div>
-        </div>
-        
-        <!-- إضافة مقدم للمحفظة -->
-        <div class="col-md-5">
-            <div class="card shadow-sm p-3 h-100">
-                <h5 class="text-success fw-bold mb-3">💰 إضافة دفعة مقدمة (للمحفظة)</h5>
-                <form method="POST" class="row g-2">
-                    {% csrf_token %}
-                    <div class="col-md-4"><input type="number" step="0.01" name="amount" class="form-control" placeholder="المبلغ" required></div>
-                    <div class="col-md-5"><input type="date" name="date_received" class="form-control" required></div>
-                    <div class="col-md-3"><button type="submit" name="add_advance" class="btn btn-success w-100">إضافة</button></div>
-                </form>
-            </div>
-        </div>
-    </div>
+        <!-- التبويبات -->
+        <ul class="nav custom-tabs flex-nowrap overflow-auto horizontal-scroll mb-3" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active text-danger" data-bs-toggle="tab" data-bs-target="#unsettled">
+                    ⏳ طلبات معلقة ({{ unsettled_orders.count }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link text-success" data-bs-toggle="tab" data-bs-target="#advances">
+                    💵 دفعات مستلمة ({{ advances.count }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link text-secondary" data-bs-toggle="tab" data-bs-target="#history">
+                    📑 الأرشيف المسدد
+                </button>
+            </li>
+        </ul>
 
-    <!-- التبويبات للطلبات الحالية والأرشيف -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-white">
-            <ul class="nav nav-tabs card-header-tabs">
-                <li class="nav-item">
-                    <button class="nav-link active fw-bold text-danger" data-bs-toggle="tab" data-bs-target="#unsettled">
-                        ⏳ طلبات معلقة ({{ unsettled_orders.count }})
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link fw-bold text-success" data-bs-toggle="tab" data-bs-target="#advances">
-                        💵 دفعات المحفظة ({{ advances.count }})
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link fw-bold text-secondary" data-bs-toggle="tab" data-bs-target="#history">
-                        📑 الأرشيف المسدد
-                    </button>
-                </li>
-            </ul>
-        </div>
-        <div class="card-body p-0">
-            <div class="tab-content">
-                <!-- جدول المعلق -->
-                <div class="tab-pane fade show active" id="unsettled">
-                    <table class="table table-hover align-middle mb-0 text-center">
-                        <thead class="table-light">
-                            <tr><th>التاريخ</th><th>الصنف</th><th>السعر</th><th>الإجراءات</th></tr>
-                        </thead>
-                        <tbody>
-                            {% for order in unsettled_orders %}
-                            <tr>
-                                <td>{{ order.date_requested|date:"Y-m-d" }}</td>
-                                <td class="fw-bold">{{ order.item_name }}</td>
-                                <td class="text-danger fw-bold">{{ order.price }} ج.م</td>
-                                <td>
-                                    <a href="{% url 'settle_order' order.id %}" class="btn btn-success btn-sm">تسديد 💸</a>
-                                    <a href="{% url 'edit_order' order.id %}" class="btn btn-warning btn-sm">تعديل ✏️</a>
-                                    <a href="{% url 'delete_order' order.id %}" class="btn btn-danger btn-sm" onclick="return confirm('متأكد من الحذف؟');">حذف 🗑️</a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="4" class="text-muted py-4">لا توجد طلبات معلقة.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+        <!-- القوائم -->
+        <div class="tab-content">
+            <!-- الطلبات المعلقة -->
+            <div class="tab-pane fade show active" id="unsettled">
+                <div class="list-container">
+                    <div class="list-header d-flex justify-content-between text-center">
+                        <div style="width: 25%;">التاريخ</div>
+                        <div style="width: 35%;">البيان</div>
+                        <div style="width: 15%;">السعر</div>
+                        <div style="width: 25%;">إجراء</div>
+                    </div>
+                    {% for order in unsettled_orders %}
+                    <div class="list-item d-flex justify-content-between align-items-center text-center">
+                        <div class="small text-muted" style="width: 25%; font-size: 0.8rem;">{{ order.date_requested|date:"y-m-d" }}</div>
+                        <div class="fw-bold text-dark" style="width: 35%; font-size: 0.9rem;">{{ order.item_name }}</div>
+                        <div class="fw-bold text-danger dir-ltr" style="width: 15%; font-size: 0.9rem;">{{ order.price }}</div>
+                        <div class="d-flex justify-content-center gap-1" style="width: 25%;">
+                            <a href="{% url 'settle_order' order.id %}" class="action-btn btn-settle shadow-sm"><i class="fas fa-check"></i></a>
+                            <a href="{% url 'edit_order' order.id %}" class="action-btn btn-edit shadow-sm"><i class="fas fa-pen"></i></a>
+                            <a href="{% url 'delete_order' order.id %}" class="action-btn btn-delete shadow-sm" onclick="return confirm('حذف الطلب؟');"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-5 text-center text-muted fw-bold">لا توجد مسحوبات معلقة حالياً.</div>
+                    {% endfor %}
                 </div>
+            </div>
 
-                <!-- جدول المحفظة الحالية -->
-                <div class="tab-pane fade" id="advances">
-                    <table class="table table-hover align-middle mb-0 text-center">
-                        <thead class="table-light">
-                            <tr><th>التاريخ</th><th>المبلغ المضاف</th></tr>
-                        </thead>
-                        <tbody>
-                            {% for adv in advances %}
-                            <tr>
-                                <td>{{ adv.date_received|date:"Y-m-d" }}</td>
-                                <td class="text-success fw-bold">{{ adv.amount }} ج.م</td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="2" class="text-muted py-4">لم يتم إضافة دفعات مقدمة في هذه الفترة.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <!-- دفعات المحفظة -->
+            <div class="tab-pane fade" id="advances">
+                <div class="list-container">
+                    <div class="list-header d-flex justify-content-between text-center">
+                        <div style="width: 50%;">تاريخ الاستلام</div>
+                        <div style="width: 50%;">المبلغ المضاف</div>
+                    </div>
+                    {% for adv in advances %}
+                    <div class="list-item d-flex justify-content-between align-items-center text-center">
+                        <div class="small text-muted" style="width: 50%;">{{ adv.date_received|date:"Y-m-d" }}</div>
+                        <div class="fw-bold text-success dir-ltr" style="width: 50%;">{{ adv.amount }} ج.م</div>
+                    </div>
+                    {% empty %}
+                    <div class="p-5 text-center text-muted fw-bold">لم يتم تسجيل دفعات مقدمة في الدورة الحالية.</div>
+                    {% endfor %}
                 </div>
+            </div>
 
-                <!-- جدول الأرشيف -->
-                <div class="tab-pane fade" id="history">
-                    <table class="table table-hover align-middle mb-0 text-center">
-                        <thead class="table-light">
-                            <tr><th>التاريخ</th><th>الصنف</th><th>السعر</th></tr>
-                        </thead>
-                        <tbody>
-                            {% for order in settled_orders %}
-                            <tr>
-                                <td>{{ order.date_requested|date:"Y-m-d" }}</td>
-                                <td>{{ order.item_name }}</td>
-                                <td class="text-secondary fw-bold">{{ order.price }} ج.م</td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="3" class="text-muted py-4">لا يوجد أرشيف مدفوعات.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <!-- الأرشيف -->
+            <div class="tab-pane fade" id="history">
+                <div class="list-container">
+                    <div class="list-header d-flex justify-content-between text-center">
+                        <div style="width: 30%;">التاريخ</div>
+                        <div style="width: 40%;">البيان</div>
+                        <div style="width: 30%;">السعر</div>
+                    </div>
+                    {% for order in settled_orders %}
+                    <div class="list-item d-flex justify-content-between align-items-center text-center">
+                        <div class="small text-muted" style="width: 30%;">{{ order.date_requested|date:"y-m-d" }}</div>
+                        <div class="fw-bold text-dark" style="width: 40%;">{{ order.item_name }}</div>
+                        <div class="fw-bold text-secondary" style="width: 30%;">{{ order.price }} ج.م</div>
+                    </div>
+                    {% empty %}
+                    <div class="p-5 text-center text-muted fw-bold">لا يوجد أرشيف مسدد.</div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
